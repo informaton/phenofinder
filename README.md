@@ -10,8 +10,5 @@ http://creativecommons.org/licenses/by/3.0/
 
 Attribution text for citations:
 
-author = {Moore, Hyatt},
-title = {Visualization of EEG Activity for Stimulating Sleep Research},
-journal = {Computer Methods in Biomechanics and Biomedical Engineering: Imaging & Visualization},
-year = {2013},
+Moore IV, Hyatt E. "Visualization of EEG activity for stimulating sleep research." Computer Methods in Biomechanics and Biomedical Engineering: Imaging & Visualization 1, no. 4 (2013): 225-233.
 
