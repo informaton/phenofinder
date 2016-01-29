@@ -65,190 +65,197 @@ if(exist('psd_data.mat','file'))
 else
     [handles.user.data, handles.user.column_names, handles.user.files,...
         handles.user.artifact_data] = loadPSAstats(cur_path);
+    handles.user.dataPathname = cur_path;
     data = handles.user.data;
     column_names = handles.user.column_names;
     files = handles.user.files;
     artifact_data = handles.user.artifact_data;
-    save('psd_data.mat','data','column_names', 'files','artifact_data');
+    dataPathname = cur_path;
+    save('psd_data.mat','data','column_names', 'files','artifact_data','dataPathname');
 end;
 
-demographics_cell = loadDemographics;
-num_files = numel(handles.user.files);
+demographics_cell = loadDemographics();
 
-age_demographics = zeros(num_files,1);
-gender_demographics = char(num_files,1);
-
-for k = 1:numel(handles.user.files)
-    index = find(strcmp(handles.user.files(k).name(1:7),demographics_cell{1}),1);
-    if(isempty(index))
-        disp([handles.user.files(k).name,' was not found, dummy demographic being used.']);
-        age_demographics(k) = 55;
-        gender_demographics(k) = 'M';
-    else
-        age_demographics(k) = demographics_cell{3}(index);
-        gender_demographics(k) = demographics_cell{2}(index);
-    end;
-        
-end;
-handles.user.demographics.male_file_indices = 'M'==gender_demographics;
-handles.user.demographics.female_file_indices = 'F'==gender_demographics;
-handles.user.demographics.age_50less_file_indices = age_demographics<50;
-handles.user.demographics.age_50to65_file_indices = age_demographics>=50&age_demographics<65;
-handles.user.demographics.age_65plus_file_indices = age_demographics>=65;
-
-handles.user.demographics.age = age_demographics;
-handles.user.demographics.gender = gender_demographics;
-
-set(handles.uipanel_settings_comparisons,'title','Comparisons','foregroundcolor',[0.5 0.5 0.5]);
-
-handles.user.max_undos = 5;
-UNDO_CELL = cell(handles.user.max_undos,1);
-
-handles.user.num_ticks = 31;
-handles.user.epochs2hold = 1;
-handles.user.min_duration = true; %min/max state of epochs necessary setting
-set(handles.edit_epochs2hold,'string',handles.user.epochs2hold);
-set(handles.slider_epochs2hold,'min',1,'max',240,'sliderstep',[.01 .1],'value',1);
-
-set(handles.text_comparisons,'string','');
-
-stagesStr = {'All Night','Awake','All nonREM','Stage 1','Stage 2','Stage 3-4','Stage 5 (REM)','Difference','Relative Difference','Ratio'};
-spectrumStr = {'Frequency Spectrum','All Frequency Bands','Delta Band','Theta Band','Alpha Band','Sigma Band'};
-
-set(handles.pop_spectrum,'string',spectrumStr,'value',1);
-set(handles.pop_stage,'string',stagesStr,'value',1);
-
-set(handles.pop_ratio_top,'string',stagesStr(1:end-2),'value',1,'enable','off');
-set(handles.pop_ratio_bottom,'string',stagesStr(1:end-2),'value',2,'enable','off');
-
-
-handles.user.selected_handle = [];
-handles.user.settings.mean = 1;
-handles.user.settings.median = 0;
-handles.user.settings.lines_to_hold = 0;
-handles.user.num_files = numel(handles.user.data);
-
-line_width = [2;
-              1.75;
-              1.5;
-              1.25;
-              1.;
-              0.75];
-
-handles.user.min_freq = 0;
-handles.user.max_freq = 30;
-handles.user.cur_freq = 0;
-handles.user.xlim = [handles.user.min_freq-0.5 handles.user.max_freq];
-
-%put the linehandles and powerlines first so that Matlab's legend function
-%can take care of this and put it in the correct order - and I can just
-%give a cell to include the first few lines as necessary..
-
-numLines = numel(line_width);
-
-handles.user.linehandles  = zeros(numLines,1);
+if(isempty(demographics_cell))
+    warndlg(sprintf('No input data found.\nPlease visit ''http://www.stanford.edu/~hyatt4'' \nto obtain a tutorial data set.'));
+% else
     
-for k = 1:numLines
-    handles.user.linehandles(k) = line('parent',handles.axes_main,'visible','on'...
-        ,'linewidth',line_width(k),'xdata',[],'ydata',[],'displayname','Study Average - All Night',...
-        'buttondownfcn',@pri_line_buttonDownFcn);
-    if(k>(handles.user.settings.lines_to_hold+1))
-        tmp = get(handles.user.linehandles(k),'annotation');
-        tmp.legendinformation.IconDisplayStyle = 'off';
+    num_files = numel(handles.user.files);
+    
+    age_demographics = zeros(num_files,1);
+    gender_demographics = char(num_files,1);
+    
+    
+    for k = 1:numel(handles.user.files)
+        index = find(strcmp(handles.user.files(k).name(1:7),demographics_cell{1}),1);
+        if(isempty(index))
+            disp([handles.user.files(k).name,' was not found, dummy demographic being used.']);
+            age_demographics(k) = 55;
+            gender_demographics(k) = 'M';
+        else
+            age_demographics(k) = demographics_cell{3}(index);
+            gender_demographics(k) = demographics_cell{2}(index);
+        end;
+        
     end;
-end;
-
-
-handles.user.bandpower_linehandle = line('parent',handles.axes_main,'visible','off'...
+    handles.user.demographics.male_file_indices = 'M'==gender_demographics;
+    handles.user.demographics.female_file_indices = 'F'==gender_demographics;
+    handles.user.demographics.age_50less_file_indices = age_demographics<50;
+    handles.user.demographics.age_50to65_file_indices = age_demographics>=50&age_demographics<65;
+    handles.user.demographics.age_65plus_file_indices = age_demographics>=65;
+    
+    handles.user.demographics.age = age_demographics;
+    handles.user.demographics.gender = gender_demographics;
+    
+    set(handles.uipanel_settings_comparisons,'title','Comparisons','foregroundcolor',[0.5 0.5 0.5]);
+    
+    handles.user.max_undos = 5;
+    UNDO_CELL = cell(handles.user.max_undos,1);
+    
+    handles.user.num_ticks = 31;
+    handles.user.epochs2hold = 1;
+    handles.user.min_duration = true; %min/max state of epochs necessary setting
+    set(handles.edit_epochs2hold,'string',handles.user.epochs2hold);
+    set(handles.slider_epochs2hold,'min',1,'max',240,'sliderstep',[.01 .1],'value',1);
+    
+    set(handles.text_comparisons,'string','');
+    
+    stagesStr = {'All Night','Awake','All nonREM','Stage 1','Stage 2','Stage 3-4','Stage 5 (REM)','Difference','Relative Difference','Ratio'};
+    spectrumStr = {'Frequency Spectrum','All Frequency Bands','Delta Band','Theta Band','Alpha Band','Sigma Band'};
+    
+    set(handles.pop_spectrum,'string',spectrumStr,'value',1);
+    set(handles.pop_stage,'string',stagesStr,'value',1);
+    
+    set(handles.pop_ratio_top,'string',stagesStr(1:end-2),'value',1,'enable','off');
+    set(handles.pop_ratio_bottom,'string',stagesStr(1:end-2),'value',2,'enable','off');
+    
+    handles.user.selected_handle = [];
+    handles.user.settings.mean = 1;
+    handles.user.settings.median = 0;
+    handles.user.settings.lines_to_hold = 0;
+    handles.user.num_files = numel(handles.user.data);
+    
+    line_width = [2;
+        1.75;
+        1.5;
+        1.25;
+        1.;
+        0.75];
+    
+    handles.user.min_freq = 0;
+    handles.user.max_freq = 30;
+    handles.user.cur_freq = 0;
+    handles.user.xlim = [handles.user.min_freq-0.5 handles.user.max_freq];
+    
+    %put the linehandles and powerlines first so that Matlab's legend function
+    %can take care of this and put it in the correct order - and I can just
+    %give a cell to include the first few lines as necessary..
+    
+    numLines = numel(line_width);
+    
+    handles.user.linehandles  = zeros(numLines,1);
+    
+    for k = 1:numLines
+        handles.user.linehandles(k) = line('parent',handles.axes_main,'visible','on'...
+            ,'linewidth',line_width(k),'xdata',[],'ydata',[],'displayname','Study Average - All Night',...
+            'buttondownfcn',@pri_line_buttonDownFcn);
+        if(k>(handles.user.settings.lines_to_hold+1))
+            tmp = get(handles.user.linehandles(k),'annotation');
+            tmp.LegendInformation.IconDisplayStyle = 'off';
+        end;
+    end;
+    
+    
+    handles.user.bandpower_linehandle = line('parent',handles.axes_main,'visible','off'...
         ,'linewidth',line_width(2),'xdata',[],'ydata',[],'color',[1 0.5 0.2],'displayname','Band Power');
-
-tmp = get(handles.user.bandpower_linehandle,'annotation');
-tmp.legendinformation.IconDisplayStyle = 'off';
-
-% set(handles.user.linehandles(1),'ButtonDownFcn',@pri_line_buttonDownFcn)
-
-dummy_line_for_patient_data_reference_in_legend = ...
-    line('parent',handles.axes_main,'visible','off',...
+    
+    tmp = get(handles.user.bandpower_linehandle,'annotation');
+    tmp.LegendInformation.IconDisplayStyle = 'off';
+    
+    % set(handles.user.linehandles(1),'ButtonDownFcn',@pri_line_buttonDownFcn)
+    
+    dummy_line_for_patient_data_reference_in_legend = ...
+        line('parent',handles.axes_main,'visible','off',...
         'linewidth',0.5,'linestyle',':','color',[0.5 0.5 0.5],'xdata',[],'ydata',[],...
-       'ButtonDownFcn',@aux_line_buttonDownFcn,'userdata',0,'displayname',...
-       'Individual patient data','xdata',[0 100],'ydata',[-100 -100]);
-
-
-%put these second so that my legend function does not have to include each
-%of these lines...
-handles.user.aux_linehandles  = zeros(handles.user.num_files,1);
-
-for k = 1:handles.user.num_files
-   handles.user.aux_linehandles(k) = line('parent',handles.axes_main,'visible','off',...
-       'linewidth',0.5,'linestyle',':','color',[0.5 0.5 0.5],'xdata',[],'ydata',[],...
-       'ButtonDownFcn',@aux_line_buttonDownFcn,'userdata',k,'displayname',...
-       handles.user.files(k).name);
-   tmp = get(handles.user.aux_linehandles(k),'annotation');
-   tmp.legendinformation.IconDisplayStyle = 'off';
-   
+        'ButtonDownFcn',@aux_line_buttonDownFcn,'userdata',0,'displayname',...
+        'Individual patient data','xdata',[0 100],'ydata',[-100 -100]);
+    
+    
+    %put these second so that my legend function does not have to include each
+    %of these lines...
+    handles.user.aux_linehandles  = zeros(handles.user.num_files,1);
+    
+    for k = 1:handles.user.num_files
+        handles.user.aux_linehandles(k) = line('parent',handles.axes_main,'visible','off',...
+            'linewidth',0.5,'linestyle',':','color',[0.5 0.5 0.5],'xdata',[],'ydata',[],...
+            'ButtonDownFcn',@aux_line_buttonDownFcn,'userdata',k,'displayname',...
+            handles.user.files(k).name);
+        tmp = get(handles.user.aux_linehandles(k),'annotation');
+        tmp.LegendInformation.IconDisplayStyle = 'off';
+        
+    end
+    
+    
+    
+    % hg = hggroup('parent',handles.axes_main,'displayname','Patient Data');
+    % set(get(get(hg,'Annotation'),'LegendInformation'),...
+    %     'IconDisplayStyle','on');
+    % set(handles.user.aux_linehandles,'parent',hg);
+    %
+    % handles.user.hgroup = hg;
+    
+    % handles.user.distribution.show = false;
+    
+    handles.user.distribution.vertical_linehandle = line('parent',handles.axes_main,'visible','off',...
+        'linewidth',2,'color',[0 0 0],'linestyle','--','displayname','Distribution Marker','xdata',[1 1]);
+    
+    tmp = get(handles.user.distribution.vertical_linehandle,'annotation');
+    tmp.LegendInformation.IconDisplayStyle = 'off';
+    
+    handles.user.sem_patchhandle = patch('parent',handles.axes_main,'facecolor','g','edgecolor','k',...
+        'edgealpha',0.35,'facealpha',0.35,'displayname','Standard Error of the Mean',...
+        'visible','off','hittest','off');
+    tmp = get(handles.user.sem_patchhandle,'annotation');
+    tmp.LegendInformation.IconDisplayStyle = 'off';
+    
+    handles.output = handles.user.data;
+    
+    handles = processData(handles);
+    
+    set(handles.axes_main,'xlim',handles.user.xlim,'xminortick','off','fontsize',10,'nextplot','add');
+    setTickMarks(handles);
+    
+    set(handles.axes_main_inset,'xticklabelmode','manual','xticklabel',[],...
+        'xtickmode','manual','xtick',[],'xminortick','off','fontsize',10,...
+        'nextplot','replace','visible','off','box','on','color',[0 1 0.7]);
+    
+    set(handles.cb_autoscale,'value',1);
+    
+    cb_autoscale_Callback(handles.cb_autoscale, eventdata, handles); %take care of the y-label,etc.
+    
+    % pop_layers_Callback(hObject, eventdata, handles); %take care of the number of lines to hold onto
+    
+    if(handles.user.settings.mean)
+        set(get(handles.axes_main,'ylabel'),'string','Mean Power (\muV^2/Hz)','fontsize',13);
+    elseif(handles.user.settings.median)
+        set(get(handles.axes_main,'ylabel'),'string','Median Power (\muV^2/Hz)','fontsize',13);
+    end;
+    % set(get(handles.axes_main,'xlabel'),'string','Hz','fontsize',13);
+    
+    set(handles.fig,'visible','on','toolbar','figure');
+    
+    %just keep the initially specified number of layers/line visible
+    set(handles.user.linehandles(:),'visible','off');
+    
+    
+    set(handles.user.linehandles(1:handles.user.settings.lines_to_hold+1),'visible','on');
+    
+    save_for_undo = false;
+    handles.user.distribution.show = false;
+    
+    handles = plotCurrentSettingsData(handles,save_for_undo);
+    handles.user.distribution.show = true;
 end
-
-
-
-% hg = hggroup('parent',handles.axes_main,'displayname','Patient Data');
-% set(get(get(hg,'Annotation'),'LegendInformation'),...
-%     'IconDisplayStyle','on');
-% set(handles.user.aux_linehandles,'parent',hg);
-% 
-% handles.user.hgroup = hg;
-
-% handles.user.distribution.show = false;
-
-handles.user.distribution.vertical_linehandle = line('parent',handles.axes_main,'visible','off',...
-    'linewidth',2,'color',[0 0 0],'linestyle','--','displayname','Distribution Marker','xdata',[1 1]);
-
-tmp = get(handles.user.distribution.vertical_linehandle,'annotation');
-tmp.legendinformation.IconDisplayStyle = 'off';
-
-handles.user.sem_patchhandle = patch('parent',handles.axes_main,'facecolor','g','edgecolor','k',...
-    'edgealpha',0.35,'facealpha',0.35,'displayname','Standard Error of the Mean',...
-    'visible','off','hittest','off');
-tmp = get(handles.user.sem_patchhandle,'annotation');
-tmp.legendinformation.IconDisplayStyle = 'off';
-
-handles.output = handles.user.data;
-
-handles = processData(handles);
-
-set(handles.axes_main,'xlim',handles.user.xlim,'xminortick','off','fontsize',10,'nextplot','add');
-setTickMarks(handles);
-
-set(handles.axes_main_inset,'xticklabelmode','manual','xticklabel',[],...
-    'xtickmode','manual','xtick',[],'xminortick','off','fontsize',10,...
-    'nextplot','replace','visible','off','box','on','color',[0 1 0.7]);
-
-set(handles.cb_autoscale,'value',1);
-
-cb_autoscale_Callback(handles.cb_autoscale, eventdata, handles); %take care of the y-label,etc.
-
-% pop_layers_Callback(hObject, eventdata, handles); %take care of the number of lines to hold onto
-
-if(handles.user.settings.mean)
-    set(get(handles.axes_main,'ylabel'),'string','Mean Power (\muV^2/Hz)','fontsize',13);
-elseif(handles.user.settings.median)
-    set(get(handles.axes_main,'ylabel'),'string','Median Power (\muV^2/Hz)','fontsize',13);
-end;
-% set(get(handles.axes_main,'xlabel'),'string','Hz','fontsize',13);
-
-set(handles.fig,'visible','on','toolbar','figure');
-
-%just keep the initially specified number of layers/line visible
-set(handles.user.linehandles(:),'visible','off');
-
-
-set(handles.user.linehandles(1:handles.user.settings.lines_to_hold+1),'visible','on');
-
-save_for_undo = false;
-handles.user.distribution.show = false;
-
-handles = plotCurrentSettingsData(handles,save_for_undo);
-handles.user.distribution.show = true;
-
 
 guidata(hObject,handles);
 
@@ -277,7 +284,7 @@ if(handles.user.distribution.show)
         
 %     if(handles.user.distribution.show)
 %         tmp = get(handles.user.distribution.vertical_linehandle,'annotation');
-%         tmp.legendinformation.IconDisplayStyle = 'on';
+%         tmp.LegendInformation.IconDisplayStyle = 'on';
 %         
 %         set(handles.axes_main_inset,'visible','on');
 %     end;
@@ -303,7 +310,7 @@ function hideDistribution(handles)
 %frequency of interest
 
 tmp = get(handles.user.distribution.vertical_linehandle,'annotation');
-tmp.legendinformation.IconDisplayStyle = 'off';
+tmp.LegendInformation.IconDisplayStyle = 'off';
 
 delete(get(handles.axes_main_inset,'children'));
 set(handles.axes_main_inset,'visible','off');
@@ -874,9 +881,9 @@ tmp = get(handles.user.bandpower_linehandle,'annotation');
 
 contents = cellstr(get(hObject,'String'));
 if(strcmp(contents{get(hObject,'Value')},'Frequency Spectrum'))
-    tmp.legendinformation.IconDisplayStyle = 'off';
+    tmp.LegendInformation.IconDisplayStyle = 'off';
 else
-    tmp.legendinformation.IconDisplayStyle = 'on';
+    tmp.LegendInformation.IconDisplayStyle = 'on';
 end;
 
 handles = clearSelection(handles);
@@ -977,17 +984,17 @@ if(~strcmp(get(handles.fig,'selectiontype'),'alt')) %'alt' refers to a ctrl-left
     if(~isempty(handles.user.selected_handle))
         set(handles.user.selected_handle,'linewidth',0.5);
         tmp = get(handles.user.selected_handle,'annotation');
-        tmp.legendinformation.IconDisplayStyle = 'off';
+        tmp.LegendInformation.IconDisplayStyle = 'off';
     else
         tmp = get(handles.user.distribution.vertical_linehandle,'annotation');
-        tmp.legendinformation.IconDisplayStyle = 'on';
+        tmp.LegendInformation.IconDisplayStyle = 'on';
         tmp = get(handles.user.sem_patchhandle,'annotation');
-        tmp.legendinformation.IconDisplayStyle = 'on';
+        tmp.LegendInformation.IconDisplayStyle = 'on';
     end;
     
     handles.user.selected_handle = hObject;      
     tmp = get(handles.user.selected_handle,'annotation');
-    tmp.legendinformation.IconDisplayStyle = 'on';
+    tmp.LegendInformation.IconDisplayStyle = 'on';
 
     set(handles.user.aux_linehandles,'color',[0.7 0.7 0.7]); %make it much lighter
     
@@ -1130,9 +1137,9 @@ function handles = clearSelection(handles)
 if(~isempty(handles.user.selected_handle))
     set(handles.user.selected_handle,'linewidth',0.5);
     tmp = get(handles.user.selected_handle,'annotation');
-    tmp.legendinformation.IconDisplayStyle = 'off';
+    tmp.LegendInformation.IconDisplayStyle = 'off';
     tmp = get(handles.user.sem_patchhandle,'annotation');
-    tmp.legendinformation.IconDisplayStyle = 'off';
+    tmp.LegendInformation.IconDisplayStyle = 'off';
 end;
 
 set(handles.user.aux_linehandles,'color',[0.5 0.5 0.5]); %reset to normal color
@@ -1272,10 +1279,10 @@ set(handles.user.linehandles(1:handles.user.settings.lines_to_hold),'visible','o
 
 hAnnotation = get(handles.user.linehandles(:),'Annotation');
 for k=1:handles.user.settings.lines_to_hold
-    hAnnotation{k}.legendinformation.IconDisplayStyle = 'on';
+    hAnnotation{k}.LegendInformation.IconDisplayStyle = 'on';
 end;
 for k=handles.user.settings.lines_to_hold+1:numel(hAnnotation)
-    hAnnotation{k}.legendinformation.IconDisplayStyle = 'off';
+    hAnnotation{k}.LegendInformation.IconDisplayStyle = 'off';
 end;
 
 plotCurrentSettingsData(handles);
@@ -1286,10 +1293,17 @@ function menu_file_load_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_file_load (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-pathname = uigetdir('','Select Directory with Data Files');
-if(pathname && ~isequal(get(handles.pb_pathname,'string'),pathname))
-    set(handles.pb_pathname,'string',pathname);
-    [handles.user.data, handles.user.column_names, handles.user.files] = loadPSAstats(pathname);
+
+pathname = uigetdir(handles.user.dataPathname,'Select Directory with Data Files');
+if(pathname)
+    handles.user.dataPathname = pathname;
+    try
+        % Changed loadPSAstats to loadPSDstats to keep up with SEV filename
+        % conventions.
+        [handles.user.data, handles.user.column_names, handles.user.files] = loadPSDstats(handles.user.dataPathname);
+    catch me
+        showME(me);
+    end
     guidata(hObject,handles);
 end;
 

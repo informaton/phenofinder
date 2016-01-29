@@ -1,9 +1,9 @@
-function [demographic_data] = loadDemographics(pathname,filename)
+function demographic_data = loadDemographics(pathname,filename)
 % [demographic_data] = loadDemographics(pathname,filename)
 % helper function that loads in demographic data for phenofinder.
 % Pathname is the full directory path which specifies
-%where the PSD files (with extension .psa.txt) are located.  This function
-%will be called from the main PSD_analyzer function/program.
+% where the PSD files (with extension .psa.txt) are located.  This function
+% will be called from the main PSD_analyzer function/program.
 % filename (optional) is a string specifying the filename to load.  If it
 % is not included the default filename 'WSC_DemographSlim is used.
 %
@@ -32,9 +32,17 @@ if(nargin<2)
 end;
 commentStyle = '#';
 
-fid = fopen(fullfile(pathname,filename),'r');
-    
-    
-% demographic_data = textscan(fid,'%s %*s %c %f','commentstyle',commentStyle,'headerlines',1);
-demographic_data = textscan(fid,'%s %c %f','commentstyle',commentStyle,'headerlines',0);
-fclose(fid);
+if(~isempty(filename) && exist(filename,'file'))
+    try
+        fid = fopen(fullfile(pathname,filename),'r');
+        % demographic_data = textscan(fid,'%s %*s %c %f','commentstyle',commentStyle,'headerlines',1);
+        demographic_data = textscan(fid,'%s %c %f','commentstyle',commentStyle,'headerlines',0);
+        fclose(fid);
+    catch
+        fprintf(1,'Error: Could not parse the the demographic input file (%s).\n',filename);
+        demographic_data = [];
+    end
+else
+    fprintf(1,'No input demographic filename provided.\n');
+    demographic_data = [];
+end
