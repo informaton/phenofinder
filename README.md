@@ -1,4 +1,4 @@
-phenofinder
+PhenoFinder
 =======
 
 Power spectral viewing software for analyzing sleep EEG patterns recorded from nocturnal polysomnography sleep studies as produced by the SEV.
@@ -27,3 +27,5 @@ Attribution text for citations:
 Moore IV, Hyatt E. "Visualization of EEG activity for stimulating sleep research." 
 Computer Methods in Biomechanics and Biomedical Engineering: Imaging & Visualization 1, no. 4 (2013): 225-233.
 ```
+
+[![DOI](https://zenodo.org/badge/10556013.svg)](https://zenodo.org/badge/latestdoi/10556013)
